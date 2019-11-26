@@ -3,6 +3,9 @@ EECS 442 Final Project
 
 ![image](./README_images/settler.jpg)
 
+# NOTE: PAY ATTENTION TO IMAGE ROTATION AFTER ANNOTATION IN WEB BROWSER
+# MAKE SURE THEY MATCH UP
+
 ## Image Annotation Schema
 
 ### Construction Pieces
