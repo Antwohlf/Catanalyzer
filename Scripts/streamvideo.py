@@ -1,10 +1,11 @@
 import cv2
+import numpy as np
 
 def main():
     # Setup for streaming
     windowName = "Live video feed"
     cv2.namedWindow(windowName)
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
 
     # Make sure we are capturing
     if cap.isOpened():
@@ -15,8 +16,11 @@ def main():
     while ret:
         ret, frame = cap.read()
         # Frame is our image. All processing happens here
-        output = frame#cv2.Canny(frame, 100, 200)
-        cv2.imshow(windowName, output)
+        output = cv2.Canny(frame, 100, 200)
+        zeros = np.zeros_like(output)
+        coolput = np.dstack( (zeros, output, zeros))
+        newout = cv2.addWeighted(coolput, 1, frame, 1, 0.0)
+        cv2.imshow(windowName, newout)
         if cv2.waitKey(1) == 27:
             break
         
