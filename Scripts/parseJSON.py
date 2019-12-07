@@ -1,10 +1,10 @@
 import json
 import numpy as np
+import os
 from matplotlib.path import Path
 import cv2
 
 # MODIFY THESE
-name = "catan_1"
 rect_thickness = 2
 img_scale = 25 #X% scale on output
 
@@ -30,10 +30,6 @@ townHex = "DA4167"
 coinHex = "#F78764"
 robberHex = "#F4D35E"
 
-imgPath = "../BoardImages/" + name + ".jpg"
-jsonPath = '../BoardAnnotations/' + name + '.json'
-origImg = cv2.imread(imgPath)
-newImg = np.zeros_like(origImg, dtype=np.uint8)
 
 def bbox_pol(pts):
     xmin = pts[0][0]
@@ -90,7 +86,7 @@ def num_for_label(label):
     elif(label == "robber"):
         return 4
 
-def draw_bounding():
+def draw_bounding(jsonPath, newImg):
     with open(jsonPath) as json_file:
         data = json.load(json_file)
         filename = list(data.keys())[0]
@@ -128,8 +124,10 @@ def draw_bounding():
                 topLeft, bottomRight = bbox_ellispse(shape["cx"], shape["cy"], shape["rx"], shape["ry"])
                 cv2.rectangle(newImg, topLeft, bottomRight, color, rect_thickness)
 
-def export_bounding(draw=True):
+def export_bounding(jsonPath, newImg, draw=True):
     #road, town, city, coin, robber
+    name = os.path.splitext(jsonPath)[0]
+    name = name.split("/")[1]
     f= open(name + ".txt","w+")
     with open(jsonPath) as json_file:
         data = json.load(json_file)
@@ -147,27 +145,27 @@ def export_bounding(draw=True):
                 pts = np.array(list(zip(x, y)), np.int32)
                 topLeft, bottomRight = bbox_pol(pts)
                 cx, cy, w, h = xml_from_bbox(topLeft, bottomRight)
-                line = "<" + str(num_for_label(tag)) + "><" + str(cx) + "><" + str(cy) + "><" + str(w) +"><" + str(h) + ">\n"
+                line = str(num_for_label(tag)) + " " + str(cx) + " " + str(cy) + " " + str(w) +" " + str(h) + "\n"
                 f.write(line)
                 if(draw):
                     cv2.circle(newImg,(cx, cy), 8, (0, 0, 0), -1)
             elif(shape["name"] == "circle"):
                 topLeft, bottomRight = bbox_circ(shape["cx"], shape["cy"], shape["r"])
                 cx, cy, w, h = xml_from_bbox(topLeft, bottomRight)
-                line = "<" + str(num_for_label(tag)) + "><" + str(cx) + "><" + str(cy) + "><" + str(w) +"><" + str(h) + ">\n"
+                line = str(num_for_label(tag)) + " " + str(cx) + " " + str(cy) + " " + str(w) +" " + str(h) + "\n"
                 f.write(line)
                 if(draw):
                     cv2.circle(newImg,(cx, cy), 8, (0, 0, 0), -1)
             elif(shape["name"] == "ellipse"):
                 topLeft, bottomRight = bbox_ellispse(shape["cx"], shape["cy"], shape["rx"], shape["ry"])
                 cx, cy, w, h = xml_from_bbox(topLeft, bottomRight)
-                line = "<" + str(num_for_label(tag)) + "><" + str(cx) + "><" + str(cy) + "><" + str(w) +"><" + str(h) + ">\n"
+                line = str(num_for_label(tag)) + " " + str(cx) + " " + str(cy) + " " + str(w) + " " + str(h) + ">\n"
                 f.write(line)
                 if(draw):
                     cv2.circle(newImg,(cx, cy), 8, (0, 0, 0), -1)
         f.close() 
 
-def create_semantic():
+def create_semantic(jsonPath, newImg):
     with open(jsonPath) as json_file:
         data = json.load(json_file)
         filename = list(data.keys())[0]
@@ -219,7 +217,7 @@ def create_semantic():
                     minorAxis = int(shape["rx"])
                 cv2.ellipse(newImg, (cx, cy), (minorAxis, majorAxis), 90.0, 0.0, 360.0, color, -1)
 
-def scale_and_show():
+def scale_and_show(newImg):
     scale_percent = img_scale # percent of original size
     width = int(newImg.shape[1] * scale_percent / 100)
     height = int(newImg.shape[0] * scale_percent / 100)
@@ -230,9 +228,31 @@ def scale_and_show():
     cv2.imshow("Output", recolored)
     cv2.waitKey(0)
 
+def main():
+    image_names = os.listdir("BoardImages")
+    json_names = os.listdir("BoardAnnotations")
 
-create_semantic()
-draw_bounding()
-export_bounding(True)
-scale_and_show()
+    # sanity check, check for equality
+    assert(len(image_names) == len(json_names))
+
+    for i in range(len(image_names)):
+        print("file: {:s}".format(image_names[i]))
+        img_path = os.path.join("BoardImages", image_names[i])
+        json_path = os.path.join("BoardAnnotations", json_names[i])
+
+        orig_img = cv2.imread(img_path)
+        new_img = np.zeros_like(orig_img, dtype=np.uint8)
+
+        create_semantic(json_path, new_img)
+        draw_bounding(json_path, new_img)
+        export_bounding(json_path, new_img, False)
+    # name = "catan_1"
+    # imgPath = "../BoardImages/" + name + ".jpg"
+    # jsonPath = '../BoardAnnotations/' + name + '.json'
+    # origImg = cv2.imread(imgPath)
+    # newImg = np.zeros_like(origImg, dtype=np.uint8)
+
+if __name__ == "__main__":
+    main()
+
 
