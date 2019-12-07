@@ -4,7 +4,7 @@ from matplotlib.path import Path
 import cv2
 
 # MODIFY THESE
-name = "catan_21"
+name = "catan_1"
 rect_thickness = 2
 img_scale = 25 #X% scale on output
 
@@ -36,7 +36,6 @@ origImg = cv2.imread(imgPath)
 newImg = np.zeros_like(origImg, dtype=np.uint8)
 
 def bbox_pol(pts):
-    
     xmin = pts[0][0]
     xmax = 0
     ymin = pts[0][1]
@@ -57,16 +56,39 @@ def bbox_pol(pts):
 def bbox_circ(cx, cy, r):
     xmin = cx - r
     xmax = cx + r
-    ymin = cy - r
-    ymax = cy + r
+    ymin = cy + r
+    ymax = cy - r
     return (xmin, ymax),(xmax, ymin)
 
 def bbox_ellispse(cx, cy, rx, ry):
     xmin = cx - rx
     xmax = cx + rx
-    ymin = cy - ry
-    ymax = cy + ry
+    ymin = cy + ry
+    ymax = cy - ry
     return (xmin, ymax),(xmax, ymin)
+
+def xml_from_bbox(topLeft, bottomRight):
+    left = topLeft[0]
+    top = topLeft[1]
+    right = bottomRight[0]
+    bottom = bottomRight[1]
+    w = abs(right - left)
+    h = abs(top - bottom)
+    cx = left + (w // 2)
+    cy = top + (h // 2)
+    return cx, cy, w, h
+
+def num_for_label(label):
+    if(label == "road"):
+        return 0
+    elif(label == "town"):
+        return 1
+    elif(label == "city"):
+        return 2
+    elif(label == "coin"):
+        return 3
+    elif(label == "robber"):
+        return 4
 
 def draw_bounding():
     with open(jsonPath) as json_file:
@@ -105,6 +127,45 @@ def draw_bounding():
                     color = hex2rgb(robberHex)
                 topLeft, bottomRight = bbox_ellispse(shape["cx"], shape["cy"], shape["rx"], shape["ry"])
                 cv2.rectangle(newImg, topLeft, bottomRight, color, rect_thickness)
+
+def export_bounding(draw=True):
+    #road, town, city, coin, robber
+    f= open(name + ".txt","w+")
+    with open(jsonPath) as json_file:
+        data = json.load(json_file)
+        filename = list(data.keys())[0]
+        regions = data[filename]["regions"]
+        for index in regions:
+            region = regions[index]
+            shape = region["shape_attributes"]
+            tags = region["region_attributes"]
+            tag = tags["type"]
+            if(shape["name"] == "polygon"):
+                x = np.array(shape["all_points_x"])
+                y = np.array(shape["all_points_y"])
+                # Test for inclusion obvi
+                pts = np.array(list(zip(x, y)), np.int32)
+                topLeft, bottomRight = bbox_pol(pts)
+                cx, cy, w, h = xml_from_bbox(topLeft, bottomRight)
+                line = "<" + str(num_for_label(tag)) + "><" + str(cx) + "><" + str(cy) + "><" + str(w) +"><" + str(h) + ">\n"
+                f.write(line)
+                if(draw):
+                    cv2.circle(newImg,(cx, cy), 8, (0, 0, 0), -1)
+            elif(shape["name"] == "circle"):
+                topLeft, bottomRight = bbox_circ(shape["cx"], shape["cy"], shape["r"])
+                cx, cy, w, h = xml_from_bbox(topLeft, bottomRight)
+                line = "<" + str(num_for_label(tag)) + "><" + str(cx) + "><" + str(cy) + "><" + str(w) +"><" + str(h) + ">\n"
+                f.write(line)
+                if(draw):
+                    cv2.circle(newImg,(cx, cy), 8, (0, 0, 0), -1)
+            elif(shape["name"] == "ellipse"):
+                topLeft, bottomRight = bbox_ellispse(shape["cx"], shape["cy"], shape["rx"], shape["ry"])
+                cx, cy, w, h = xml_from_bbox(topLeft, bottomRight)
+                line = "<" + str(num_for_label(tag)) + "><" + str(cx) + "><" + str(cy) + "><" + str(w) +"><" + str(h) + ">\n"
+                f.write(line)
+                if(draw):
+                    cv2.circle(newImg,(cx, cy), 8, (0, 0, 0), -1)
+        f.close() 
 
 def create_semantic():
     with open(jsonPath) as json_file:
@@ -172,4 +233,6 @@ def scale_and_show():
 
 create_semantic()
 draw_bounding()
+export_bounding(True)
 scale_and_show()
+
