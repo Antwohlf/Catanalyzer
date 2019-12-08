@@ -3,6 +3,7 @@ import numpy as np
 import os
 from matplotlib.path import Path
 import cv2
+from matplotlib.image import imsave
 
 # MODIFY THESE
 rect_thickness = 2
@@ -22,14 +23,12 @@ def hex2rgb(h):
     hex = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
     return hex
 
-
 blackHex = "#000000"
 roadHex = "#083D77"
 cityHex = "#EBEBD3"
 townHex = "DA4167"
 coinHex = "#F78764"
 robberHex = "#F4D35E"
-
 
 def bbox_pol(pts):
     xmin = pts[0][0]
@@ -86,12 +85,14 @@ def num_for_label(label):
     elif(label == "robber"):
         return 4
 
-def draw_bounding(jsonPath, newImg):
+def draw_bounding(jsonPath, newImg, origImg, name="", crop=False):
     with open(jsonPath) as json_file:
         data = json.load(json_file)
         filename = list(data.keys())[0]
         regions = data[filename]["regions"]
+        count = 0
         for index in regions:
+            count += 1
             region = regions[index]
             shape = region["shape_attributes"]
             tags = region["region_attributes"]
@@ -108,6 +109,8 @@ def draw_bounding(jsonPath, newImg):
                 elif(tags["type"] == "robber"):
                     color = hex2rgb(robberHex)
                 topLeft, bottomRight = bbox_pol(pts)
+                if(crop):
+                    crop_bbox(origImg, topLeft, bottomRight, name=name, count=count)
                 cv2.rectangle(newImg, topLeft, bottomRight, color, rect_thickness)
             elif(shape["name"] == "circle"):
                 color = hex2rgb(coinHex)
@@ -164,6 +167,18 @@ def export_bounding(jsonPath, newImg, draw=True):
                 if(draw):
                     cv2.circle(newImg,(cx, cy), 8, (0, 0, 0), -1)
         f.close() 
+
+def crop_bbox(img, topLeft, bottomRight, name, count):
+    left = topLeft[0]
+    top = topLeft[1]
+    right = bottomRight[0]
+    bottom = bottomRight[1]
+    w = abs(right - left)
+    h = abs(top - bottom)
+    cx = left + (w // 2)
+    cy = top + (h // 2)
+    crop_img = img[top:bottom, left:right]
+    imsave("cropped/" + name + "_" + str(count) + ".jpg", cv2.cvtColor(crop_img, cv2.COLOR_BGR2RGB))
 
 def create_semantic(jsonPath, newImg):
     with open(jsonPath) as json_file:
@@ -229,6 +244,7 @@ def scale_and_show(newImg):
     cv2.waitKey(0)
 
 def main():
+    '''
     image_names = os.listdir("BoardImages")
     json_names = os.listdir("BoardAnnotations")
 
@@ -246,11 +262,16 @@ def main():
         create_semantic(json_path, new_img)
         draw_bounding(json_path, new_img)
         export_bounding(json_path, new_img, False)
-    # name = "catan_1"
-    # imgPath = "../BoardImages/" + name + ".jpg"
-    # jsonPath = '../BoardAnnotations/' + name + '.json'
-    # origImg = cv2.imread(imgPath)
-    # newImg = np.zeros_like(origImg, dtype=np.uint8)
+    '''
+
+    name = "catan_28"
+    imgPath = "../BoardImages/" + name + ".jpg"
+    jsonPath = '../BoardAnnotations/' + name + '.json'
+    origImg = cv2.imread(imgPath)
+    new_img = np.zeros_like(origImg, dtype=np.uint8)
+    create_semantic(jsonPath, new_img)
+    draw_bounding(jsonPath, new_img, origImg, name=name, crop=True)
+    scale_and_show(new_img + origImg)
 
 if __name__ == "__main__":
     main()
