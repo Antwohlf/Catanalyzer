@@ -1,0 +1,8 @@
+/home/anthony/darknet/data/valid/images/catan_53.jpg
+/home/anthony/darknet/data/valid/images/catan_56.jpg
+/home/anthony/darknet/data/valid/images/catan_55.jpg
+/home/anthony/darknet/data/valid/images/catan_54.jpg
+/home/anthony/darknet/data/valid/images/catan_52.jpg
+/home/anthony/darknet/data/valid/images/catan_58.jpg
+/home/anthony/darknet/data/valid/images/catan_51.jpg
+/home/anthony/darknet/data/valid/images/catan_57.jpg
