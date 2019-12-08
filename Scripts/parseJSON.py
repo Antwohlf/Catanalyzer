@@ -109,11 +109,14 @@ def draw_bounding(jsonPath, newImg, origImg, name="", crop=False):
                 elif(tags["type"] == "robber"):
                     color = hex2rgb(robberHex)
                 topLeft, bottomRight = bbox_pol(pts)
-                if(crop):
-                    crop_bbox(origImg, topLeft, bottomRight, name=name, count=count)
+                # if(crop):
+                    # crop_bbox(origImg, topLeft, bottomRight, name=name, count=count)
                 cv2.rectangle(newImg, topLeft, bottomRight, color, rect_thickness)
             elif(shape["name"] == "circle"):
                 color = hex2rgb(coinHex)
+                if(tags["type"] == "coin"):
+                    if(crop):
+                        crop_bbox(origImg, topLeft, bottomRight, name=name, count=count)
                 if(tags["type"] == "robber"):
                     color = hex2rgb(robberHex)
                 topLeft, bottomRight = bbox_circ(shape["cx"], shape["cy"], shape["r"])
@@ -121,6 +124,8 @@ def draw_bounding(jsonPath, newImg, origImg, name="", crop=False):
             elif(shape["name"] == "ellipse"):
                 color = hex2rgb(blackHex)
                 if(tags["type"] == "coin"):
+                    if(crop):
+                        crop_bbox(origImg, topLeft, bottomRight, name=name, count=count)
                     color = hex2rgb(coinHex)
                 elif(tags["type"] == "robber"):
                     color = hex2rgb(robberHex)

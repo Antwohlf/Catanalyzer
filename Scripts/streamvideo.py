@@ -1,32 +1,40 @@
 import cv2
 import numpy as np
 
-def main():
-    # Setup for streaming
-    windowName = "Live video feed"
+def startStream(name="Live Video Feed", cam=0):
+    windowName = name
     cv2.namedWindow(windowName)
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(cam)
 
     # Make sure we are capturing
     if cap.isOpened():
         ret, frame = cap.read()
     else:
         ret = False
-    
-    while ret:
+
+    return ret, cap
+
+def displayStream(img, name="Live Video Feed"):
+    cv2.imshow(name, img)
+    if cv2.waitKey(1) == 27:
+        return True
+    return False
+
+def endStream(cap, name="Live Video Feed"):
+    cv2.destroyWindow(name)
+    cap.release()
+
+
+def main():
+    ret, cap = startStream()
+    stopFeed = False
+    while ret and not stopFeed:
         ret, frame = cap.read()
         # Frame is our image. All processing happens here
         output = cv2.Canny(frame, 100, 200)
-        zeros = np.zeros_like(output)
-        coolput = np.dstack( (zeros, output, zeros))
-        newout = cv2.addWeighted(coolput, 1, frame, 1, 0.0)
-        cv2.imshow(windowName, newout)
-        if cv2.waitKey(1) == 27:
-            break
-        
+        stopFeed = displayStream(output)
     # Teardown 
-    cv2.destroyWindow(windowName)
-    cap.release()
+    endStream()
 
 if __name__ == "__main__":
     main()
