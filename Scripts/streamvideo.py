@@ -5,7 +5,7 @@ def main():
     # Setup for streaming
     windowName = "Live video feed"
     cv2.namedWindow(windowName)
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
 
     # Make sure we are capturing
     if cap.isOpened():
