@@ -15,6 +15,8 @@ NO_FLIPS = [0, 1, 2, 3, 4, 6, 7, \
             9, 10, 11, 18, 19, 20, 21, 22, \
             26, 28, 31, 42, 52, 54, 55, 56, 57]
 
+TAGS = {'road': 0, 'coin': 1, 'robber': 2, 'city': 3, 'town': 4}
+
 def bbox_pol(pts):
     xmin, ymin = np.min(pts, axis=0)
     xmax, ymax = np.max(pts, axis=0)
@@ -87,7 +89,8 @@ def parse_regions(region_json, corresponding_image, file_no):
 
         cx, cy, w, h = yolo_from_bbox(topLeft, bottomRight)
 
-        yolo_string = "0 " + str(cx) + " " + str(cy) + " " + str(w) + " " + str(h)
+            
+        yolo_string = str(TAGS[tag]) + ' ' + str(cx) + " " + str(cy) + " " + str(w) + " " + str(h)
         with open("dataset/{:s}/pos_{:d}.txt".format(tag, INSTANCES[tag]), "w+") as f_write:
             f_write.write(yolo_string)
         cv2.imwrite("dataset/{:s}/pos_{:d}.jpg".format(tag, INSTANCES[tag]), image_crop)
