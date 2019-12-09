@@ -2,11 +2,17 @@ import json
 import numpy as np
 import os
 from matplotlib.path import Path
+import matplotlib.pyplot as plt
 import cv2
+
 
 # MODIFY THESE
 rect_thickness = 2
 img_scale = 25 #X% scale on output
+
+NO_FLIPS = [0, 1, 2, 3, 4, 6, 7, \
+            9, 10, 11, 18, 19, 20, 21, 22, \
+            26, 28, 31, 42, 52, 54, 55, 56, 57]
 
 def point_in_circle(cx, cy, r, x, y):
     a = np.array([cx, cy])
@@ -128,6 +134,13 @@ def export_bounding(jsonPath, newImg, draw=True):
     #road, town, city, coin, robber
     name = os.path.splitext(jsonPath)[0]
     name = name.split("/")[1]
+
+    # file_no = int(name.split("_")[1])
+    # if file_no not in NO_FLIPS:
+    #     newImg = np.flip(newImg, axis=(0,1))
+
+    H, W, _ = newImg.shape
+
     f= open(name + ".txt","w+")
     with open(jsonPath) as json_file:
         data = json.load(json_file)
@@ -145,21 +158,21 @@ def export_bounding(jsonPath, newImg, draw=True):
                 pts = np.array(list(zip(x, y)), np.int32)
                 topLeft, bottomRight = bbox_pol(pts)
                 cx, cy, w, h = xml_from_bbox(topLeft, bottomRight)
-                line = str(num_for_label(tag)) + " " + str(cx) + " " + str(cy) + " " + str(w) +" " + str(h) + "\n"
+                line = str(num_for_label(tag)) + " " + str(cx/W) + " " + str(cy/H) + " " + str(w/W) +" " + str(h/H) + "\n"
                 f.write(line)
                 if(draw):
                     cv2.circle(newImg,(cx, cy), 8, (0, 0, 0), -1)
             elif(shape["name"] == "circle"):
                 topLeft, bottomRight = bbox_circ(shape["cx"], shape["cy"], shape["r"])
                 cx, cy, w, h = xml_from_bbox(topLeft, bottomRight)
-                line = str(num_for_label(tag)) + " " + str(cx) + " " + str(cy) + " " + str(w) +" " + str(h) + "\n"
+                line = str(num_for_label(tag)) + " " + str(cx/W) + " " + str(cy/H) + " " + str(w/W) +" " + str(h/H) + "\n"
                 f.write(line)
                 if(draw):
                     cv2.circle(newImg,(cx, cy), 8, (0, 0, 0), -1)
             elif(shape["name"] == "ellipse"):
                 topLeft, bottomRight = bbox_ellispse(shape["cx"], shape["cy"], shape["rx"], shape["ry"])
                 cx, cy, w, h = xml_from_bbox(topLeft, bottomRight)
-                line = str(num_for_label(tag)) + " " + str(cx) + " " + str(cy) + " " + str(w) + " " + str(h) + ">\n"
+                line = str(num_for_label(tag)) + " " + str(cx/W) + " " + str(cy/H) + " " + str(w/W) + " " + str(h/H) + "\n"
                 f.write(line)
                 if(draw):
                     cv2.circle(newImg,(cx, cy), 8, (0, 0, 0), -1)
@@ -225,8 +238,8 @@ def scale_and_show(newImg):
     # resize image
     resized = cv2.resize(newImg, dim, interpolation = cv2.INTER_AREA)
     recolored = cv2.cvtColor(resized, cv2.COLOR_BGR2RGB)
-    cv2.imshow("Output", recolored)
-    cv2.waitKey(0)
+    plt.imshow(recolored)
+    plt.show()
 
 def main():
     image_names = os.listdir("BoardImages")
@@ -244,8 +257,10 @@ def main():
         new_img = np.zeros_like(orig_img, dtype=np.uint8)
 
         create_semantic(json_path, new_img)
-        draw_bounding(json_path, new_img)
-        export_bounding(json_path, new_img, False)
+        # draw_bounding(json_path, new_img)
+        export_bounding(json_path, new_img, True)
+        
+        # scale_and_show(new_img)
     # name = "catan_1"
     # imgPath = "../BoardImages/" + name + ".jpg"
     # jsonPath = '../BoardAnnotations/' + name + '.json'
