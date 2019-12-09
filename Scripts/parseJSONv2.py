@@ -11,22 +11,13 @@ import cv2
 
 INSTANCES = {'road': 0, 'coin': 0, 'robber': 0, 'city': 0, 'town': 0}
 
-def bbox_pol(pts):
-    xmin = pts[0][0]
-    xmax = 0
-    ymin = pts[0][1]
-    ymax = 0
-    
-    for pt in pts:
-        if pt[0] > xmax:
-            xmax = pt[0]
-        elif pt[0] < xmin:
-            xmin = pt[0]
+NO_FLIPS = [0, 1, 2, 3, 4, 6, 7, \
+            9, 10, 11, 18, 19, 20, 21, 22, \
+            26, 28, 31, 42, 52, 54, 55, 56, 57]
 
-        if pt[1] > ymax:
-            ymax = pt[1]
-        elif pt[1] < ymin:
-            ymin = pt[1]
+def bbox_pol(pts):
+    xmin, ymin = np.min(pts, axis=0)
+    xmax, ymax = np.max(pts, axis=0)
     return (xmin, ymin),(xmax, ymax)
 
 def bbox_circ(cx, cy, r):
@@ -68,7 +59,9 @@ def yolo_from_bbox(topLeft, bottomRight):
     cy = top + (h // 2)
     return cx, cy, w, h
 
-def parse_regions(region_json, corresponding_image):
+def parse_regions(region_json, corresponding_image, file_no):
+    if file_no not in NO_FLIPS:
+        corresponding_image = np.flip(corresponding_image)
     for index in region_json:
         region = region_json[index]
         shape = region["shape_attributes"]
@@ -86,8 +79,11 @@ def parse_regions(region_json, corresponding_image):
         elif shape["name"] == "ellipse":
             topLeft, bottomRight = bbox_ellispse(shape["cx"], shape["cy"], shape["rx"], shape["ry"])
 
+        H, W, _ = np.shape(corresponding_image)
+
         image_crop = corresponding_image[topLeft[1]:bottomRight[1], topLeft[0]:bottomRight[0]]
-        # image_crop = cv2.cvtColor(image_crop, cv2.COLOR_BGR2RGB)
+        if file_no not in NO_FLIPS:
+            image_crop = cv2.cvtColor(image_crop, cv2.COLOR_BGR2RGB)
 
         cx, cy, w, h = yolo_from_bbox(topLeft, bottomRight)
 
@@ -116,8 +112,11 @@ def main():
 
     for i in range(len(image_names)):
         print("processing the {:d}th image".format(i))
+        json_fileno = int(json_names[i].split('.')[0].split('_')[1])
+        image_fileno =int(image_names[i].split('.')[0].split('_')[1])
+        assert(json_fileno == image_fileno)
         data_regions = read_json(os.path.join("BoardAnnotations", json_names[i]))
-        parse_regions(data_regions, cv2.imread(os.path.join("BoardImages", image_names[i])))
+        parse_regions(data_regions, cv2.imread(os.path.join("BoardImages", image_names[i])), json_fileno)
 
 if __name__ == "__main__":
     main()
