@@ -104,14 +104,13 @@ def detect_color_hsv(img, cropStart=4, toleranceStart=2):
                 h_diff = abs(color - h_mean)
                 if h_diff < tolerance:
                     class_index = i
-    return class_index
+    return names[class_index]
 
 def main():
     for i in range(1, 65):
         img = cv2.imread("cropped/catan_28_" + str(i) + ".jpg")
-        index = detect_color_lab(img)
-        print(str(i) + ": " + names[index])
-
+        color = detect_color_lab(img)
+        print(str(i) + ": " + color)
 
 if __name__ == "__main__":
     main()

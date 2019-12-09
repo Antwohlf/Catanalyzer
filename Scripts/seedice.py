@@ -56,10 +56,10 @@ def detect_pips_and_locations(captured_frames):
         # setting the parameters for the blob_detection function of OpenCV
         min_threshold = 150 #50                     
         max_threshold = 255 #200                     
-        min_area = 80 #100                          
-        max_area = 110 #250
-        min_circularity = .3
-        min_inertia_ratio = .3
+        min_area = 60 #100                          
+        max_area = 150 #250
+        min_circularity = .1
+        min_inertia_ratio = .1
 
         params = cv2.SimpleBlobDetector_Params()  
         params.filterByArea = True
@@ -107,8 +107,8 @@ def detect_pips_and_locations_closer(captured_frames):
         max_threshold = 255 #200                     
         min_area = 100 #400                          
         max_area = 300 #700
-        min_circularity = 0.3
-        min_inertia_ratio = 0.3
+        min_circularity = 0.6
+        min_inertia_ratio = 0.6
 
         params = cv2.SimpleBlobDetector_Params()  
         params.filterByArea = True
@@ -144,28 +144,22 @@ def run_stats_dice(dice_states, var_thresh = 300):
     for state in dice_states:
         sums.append(state[0] + state[1])
     var = np.var(sums)
-    # mode = stats.mode(sums)
-    mode = np.max(sums)
+    mode = stats.mode(sums)[0][0]
+    max = np.max(sums)
     if var < var_thresh:
-        # if(mode[0] == -24):
-            # return -1
-        # return mode[0][0]
-    # else:
-        # return -1
-        if mode == -24:
-            return -1
-        return mode
+        if max == -24:
+            return -1, mode
+        return max, mode
     else:
-        return -1
+        return -2, mode
 
 def get_dice_state(dice_states, frame, kept_states=15, var_thresh=300, penalization=-12, gamma=0.9, show_feed=False):
-    if len(dice_states) == 0:
-        dice_states = [(penalization, penalization)]
+    # if len(dice_states) == 0:
+        # dice_states = [(penalization, penalization)]
 
     grayscale = gamma_correct(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), gamma);
     frameBuffer = [grayscale]
     output, numDict, box = detect_pips_and_locations(frameBuffer)
-
     cropped = output
         
     if len(box) == 2:
@@ -180,7 +174,7 @@ def get_dice_state(dice_states, frame, kept_states=15, var_thresh=300, penalizat
         dim = (width, height)
         # resize image
         cropped = cv2.resize(cropped, dim, interpolation = cv2.INTER_AREA)
-        ret, cropped = cv2.threshold(cropped,150,255,cv2.THRESH_TOZERO)
+        ret, cropped = cv2.threshold(cropped,90,255,cv2.THRESH_TOZERO)
         cv2.rectangle(output, (left, bottom), (top, right), (255, 0, 0), 1)
         kernel = np.ones((3,3),np.uint8)
         erosion = cv2.dilate(cropped,kernel,iterations = 1)
@@ -189,9 +183,9 @@ def get_dice_state(dice_states, frame, kept_states=15, var_thresh=300, penalizat
     if(len(numDict) >= 2):
         keys = list(numDict.keys())
         dice_states.append((numDict[keys[0]], numDict[keys[1]]))
-    elif(len(numDict) == 1):
-        keys = list(numDict.keys())
-        dice_states.append((numDict[keys[0]], 0))
+    # elif(len(numDict) == 1):
+        # keys = list(numDict.keys())
+        # dice_states.append((numDict[keys[0]], 0))
     elif(len(numDict) == 0):
         dice_states.append( (penalization, penalization) ) #idfk 
 
@@ -199,8 +193,8 @@ def get_dice_state(dice_states, frame, kept_states=15, var_thresh=300, penalizat
     if(len(dice_states) > kept_states):
         dice_states.pop(0)
 
-    roll = run_stats_dice(dice_states, var_thresh=var_thresh)
-    return roll, output
+    roll, mode = run_stats_dice(dice_states, var_thresh=var_thresh)
+    return roll, mode, output
 
 def main():
 # Setup for streaming
@@ -219,7 +213,7 @@ def main():
         ret, frame = cap.read()
         # Frame is our image. All processing happens here
 
-        roll, output = get_dice_state(dice_states, frame)
+        roll, mode, output = get_dice_state(dice_states, frame)
         if roll == -1:
             roll_text = "No roll"
         else:
