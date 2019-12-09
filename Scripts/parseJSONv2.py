@@ -90,7 +90,7 @@ def parse_regions(region_json, corresponding_image, file_no):
         cx, cy, w, h = yolo_from_bbox(topLeft, bottomRight)
 
             
-        yolo_string = str(TAGS[tag]) + ' ' + str(cx) + " " + str(cy) + " " + str(w) + " " + str(h)
+        yolo_string = str(TAGS[tag]) + " " + str(cx) + " " + str(cy) + " " + str(w) + " " + str(h)
         with open("dataset/{:s}/pos_{:d}.txt".format(tag, INSTANCES[tag]), "w+") as f_write:
             f_write.write(yolo_string)
         cv2.imwrite("dataset/{:s}/pos_{:d}.jpg".format(tag, INSTANCES[tag]), image_crop)
