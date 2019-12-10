@@ -1,0 +1,1 @@
+These are the coins that we use for comparison in the calculate numbers function
