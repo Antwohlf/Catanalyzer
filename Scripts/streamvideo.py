@@ -3,7 +3,7 @@ import numpy as np
 from makeOverlay import makeOverlay
 import PIL
 
-def startStream(name="Live Video Feed", cam=0):
+def startStream(name="Live Video Feed", cam=1):
     windowName = name
     cv2.namedWindow(windowName)
     cap = cv2.VideoCapture(cam)

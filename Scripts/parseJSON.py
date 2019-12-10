@@ -183,7 +183,7 @@ def crop_bbox(img, topLeft, bottomRight, name, count):
     cx = left + (w // 2)
     cy = top + (h // 2)
     crop_img = img[top:bottom, left:right]
-    imsave("Scripts/cropped/" + name + "_" + str(count) + ".jpg", cv2.cvtColor(crop_img, cv2.COLOR_BGR2RGB))
+    imsave("cropped/" + name + "_" + str(count) + ".jpg", cv2.cvtColor(crop_img, cv2.COLOR_BGR2RGB))
 
 def create_semantic(jsonPath, newImg):
     with open(jsonPath) as json_file:
@@ -269,9 +269,9 @@ def main():
         export_bounding(json_path, new_img, False)
     '''
 
-    name = "catan_14"
-    imgPath = "BoardImages/" + name + ".jpg"
-    jsonPath = 'BoardAnnotations/' + name + '.json'
+    name = "catan_24"
+    imgPath = "../BoardImages/" + name + ".jpg"
+    jsonPath = '../BoardAnnotations/' + name + '.json'
     origImg = cv2.imread(imgPath)
     new_img = np.zeros_like(origImg, dtype=np.uint8)
     create_semantic(jsonPath, new_img)

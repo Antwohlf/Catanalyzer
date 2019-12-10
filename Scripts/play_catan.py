@@ -45,7 +45,7 @@ while ret and not stopFeed and not stopFeed2:
     fakeData = {"dice": dice_state, "red":{"road":9, "town":3, "city":2}, "white":{"road":5, "town":2, "city":0}, "blue":{"road":12, "town":4, "city":2}, "orange":{"road":3, "town":4, "city":5}}
     overlaid = makeOverlay(cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA), fakeData)
     stopFeed2 = stream.displayStream(stream.pil2cv(overlaid), name="Live Catan Feed")
-    stopFeed = stream.displayStream(dice_output, name="Live Dice Feed")
+    # stopFeed = stream.displayStream(dice_output, name="Live Dice Feed")
 
 # Teardown 
 stream.endStream(cap)
