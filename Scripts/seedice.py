@@ -76,7 +76,7 @@ def detect_pips_and_locations(captured_frames):
         keypoints = detector.detect(gray_image) # keypoints is a list containing the detected blobs.
         # inv_image = cv2.bitwise_not(gray_image)
         # keypoints2 = detector.detect(inv_image)
-        im_with_keypoints = cv2.drawKeypoints(gray_image, keypoints, np.array([]), (255, 0, 0),
+        im_with_keypoints = cv2.drawKeypoints(gray_image, keypoints, np.array([]), (0, 0, 255),
                                               cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
         thresh = 50
         X = np.array([list(i.pt) for i in keypoints])
@@ -127,7 +127,7 @@ def detect_pips_and_locations_closer(captured_frames):
         keypoints = detector.detect(gray_image) # keypoints is a list containing the detected blobs.
         # inv_image = cv2.bitwise_not(gray_image)
         # keypoints2 = detector.detect(inv_image)
-        im_with_keypoints = cv2.drawKeypoints(gray_image, keypoints, np.array([]), (255, 0, 0),
+        im_with_keypoints = cv2.drawKeypoints(gray_image, keypoints, np.array([]), (0, 0, 255),
                                               cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
         thresh = 70
         X = np.array([list(i.pt) for i in keypoints])
@@ -161,6 +161,9 @@ def get_dice_state(dice_states, frame, kept_states=15, var_thresh=300, penalizat
     frameBuffer = [grayscale]
     output, numDict, box = detect_pips_and_locations(frameBuffer)
     cropped = output
+
+    output2 = frame
+    show = False
         
     if len(box) == 2:
         left = int(box[0][0])
@@ -175,10 +178,11 @@ def get_dice_state(dice_states, frame, kept_states=15, var_thresh=300, penalizat
         # resize image
         cropped = cv2.resize(cropped, dim, interpolation = cv2.INTER_AREA)
         ret, cropped = cv2.threshold(cropped,90,255,cv2.THRESH_TOZERO)
-        cv2.rectangle(output, (left, bottom), (top, right), (255, 0, 0), 1)
+        cv2.rectangle(frame, (left, bottom), (top, right), (255, 0, 0), 1)
         kernel = np.ones((3,3),np.uint8)
         erosion = cv2.dilate(cropped,kernel,iterations = 1)
-        output, numDict = detect_pips_and_locations_closer([erosion])
+        show = True
+        output2, numDict = detect_pips_and_locations_closer([erosion])
 
     if(len(numDict) >= 2):
         keys = list(numDict.keys())
@@ -194,7 +198,7 @@ def get_dice_state(dice_states, frame, kept_states=15, var_thresh=300, penalizat
         dice_states.pop(0)
 
     roll, mode = run_stats_dice(dice_states, var_thresh=var_thresh)
-    return roll, mode, output
+    return roll, mode, output2, frame, show
 
 def main():
 # Setup for streaming

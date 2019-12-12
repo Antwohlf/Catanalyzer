@@ -19,7 +19,7 @@ while ret and not stopFeed and not stopFeed2:
     # Frame is our image. All processing happens here
 
     # ======> Dice State Machine <======
-    roll, mode, dice_output = get_dice(dice_states, frame, kept_states=15, var_thresh=30, gamma=0.7)
+    roll, mode, dice_output, output, show = get_dice(dice_states, frame, kept_states=15, var_thresh=30, gamma=0.7)
     if dice_state == -1 and roll > 0 and mode > 0:
         #Out of No Roll state to Roll state
         dice_state = roll
@@ -42,10 +42,12 @@ while ret and not stopFeed and not stopFeed2:
     # coins = detectNumber(yolo_bounding_box)
 
     # =======> Produce Overlay <========
-    fakeData = {"dice": dice_state, "red":{"road":9, "town":3, "city":2}, "white":{"road":5, "town":2, "city":0}, "blue":{"road":12, "town":4, "city":2}, "orange":{"road":3, "town":4, "city":5}}
-    overlaid = makeOverlay(cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA), fakeData)
+    fakeData = {"dice": dice_state, "red":{"road":4, "town":2, "city":0}, "white":{"road":3, "town":1, "city":2}, "blue":{"road":3, "town":1, "city":1}, "orange":{"road":5, "town":1, "city":1}}
+    overlaid = makeOverlay(cv2.cvtColor(output, cv2.COLOR_BGR2RGBA), fakeData)
     stopFeed2 = stream.displayStream(stream.pil2cv(overlaid), name="Live Catan Feed")
-    # stopFeed = stream.displayStream(dice_output, name="Live Dice Feed")
+    if(show):
+        stopFeed = stream.displayStream(dice_output, name="Live Dice Feed")
+    # Resize windows in code to  show both
 
 # Teardown 
 stream.endStream(cap)

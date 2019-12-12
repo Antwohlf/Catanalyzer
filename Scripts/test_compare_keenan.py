@@ -2,17 +2,13 @@ import cv2
 
 class CompareImage(object):
 
-    def __init__(self, image_1_path, image_2_path):
+    def __init__(self, img1, img2):
         self.minimum_commutative_image_diff = 1
-        self.image_1_path = image_1_path
-        self.image_2_path = image_2_path
+        self.image_1 = img1
+        self.image_2 = img2
 
     def compare_image(self):
-        image_1 = cv2.imread(self.image_1_path, cv2.COLOR_BGR2GRAY)
-        image_2 = cv2.imread(self.image_2_path, cv2.COLOR_BGR2GRAY)
-        ret1, image_1 = cv2.threshold(image_1,127,255,cv2.THRESH_BINARY)
-        ret2, image_2 = cv2.threshold(image_2,127,255,cv2.THRESH_BINARY)
-        commutative_image_diff = self.get_image_difference(image_1, image_2)
+        commutative_image_diff = self.get_image_difference(self.image_1, self.image_2)
 
         if commutative_image_diff < self.minimum_commutative_image_diff:
             print ("Matched")
