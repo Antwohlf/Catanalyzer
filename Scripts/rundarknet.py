@@ -39,7 +39,7 @@ def rundarknet(image):
             y2=int(y_center+height_box * 0.5)
             #cv2.rectangle(image,(x1,y1),(x2,y2),(255,255,255),1)
             #cv2.putText(image,classes[class_index]+" "+"{0:.1f}".format(confidence),(x1,y1), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,255),1,cv2.LINE_AA)
-            stuff.append((classes[class_index],x_center,y_center,height_box,width_box))
+            stuff.append((classes[class_index],x1,y1,x2,y2))
     return stuff
 
 def main():

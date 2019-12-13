@@ -10,6 +10,10 @@ import matplotlib.pyplot as plt
 import scipy.cluster.hierarchy as hcluster
 import scipy.stats as stats
 
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import time
+
 def gamma_correct(img, gamma):
     invGamma = 1.0 / gamma
     table = np.array([((i / 255.0) ** invGamma) * 255
@@ -148,10 +152,10 @@ def run_stats_dice(dice_states, var_thresh = 300):
     max = np.max(sums)
     if var < var_thresh:
         if max == -24:
-            return -1, mode
-        return max, mode
+            return -1, mode, var
+        return max, mode, var
     else:
-        return -2, mode
+        return -2, mode, var
 
 def get_dice_state(dice_states, frame, kept_states=15, var_thresh=300, penalization=-12, gamma=0.9, show_feed=False):
     # if len(dice_states) == 0:
@@ -197,17 +201,55 @@ def get_dice_state(dice_states, frame, kept_states=15, var_thresh=300, penalizat
     if(len(dice_states) > kept_states):
         dice_states.pop(0)
 
-    roll, mode = run_stats_dice(dice_states, var_thresh=var_thresh)
-    return roll, mode, output2, frame, show
+    roll, mode, var = run_stats_dice(dice_states, var_thresh=var_thresh)
+    return roll, mode, output2, frame, show, var
+
+def get_dice_state2(dice_states, frame, kept_states=15, var_thresh=300, penalization=-12, gamma=0.9, show_feed=False):
+    # if len(dice_states) == 0:
+        # dice_states = [(penalization, penalization)]
+
+    grayscale = gamma_correct(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), gamma);
+    frameBuffer = [grayscale]
+    output, numDict, box = detect_pips_and_locations(frameBuffer)
+    cropped = output
+
+    output2 = frame
+    if(len(numDict) >= 2):
+        keys = list(numDict.keys())
+        dice_states.append((numDict[keys[0]], numDict[keys[1]]))
+    # elif(len(numDict) == 1):
+        # keys = list(numDict.keys())
+        # dice_states.append((numDict[keys[0]], 0))
+    elif(len(numDict) == 0):
+        dice_states.append( (penalization, penalization) ) #idfk 
+
+    # Trimming dice states
+    if(len(dice_states) > kept_states):
+        dice_states.pop(0)
+
+    roll, mode, var = run_stats_dice(dice_states, var_thresh=var_thresh)
+    return roll
+
+# def animate_graph(i):
+    # ax1.clear()
+    # ax1.plot(variances)
+
+# fig = plt.figure()
+# ax1 = fig.add_subplot(1,1,1)
+variances = [0]
 
 def main():
 # Setup for streaming
-    dice_states = []
+    dice_states = [(-12, -12)]
+    dice_states2 = [(-12, -12)]
     windowName = "Live video feed"
     cv2.namedWindow(windowName)
     cap = cv2.VideoCapture(0)
 
     # Make sure we are capturing
+
+    # ani = animation.FuncAnimation(fig, animate_graph, interval=1000)
+    # plt.show(block=False)
     if cap.isOpened():
         ret, frame = cap.read()
     else:
@@ -217,7 +259,10 @@ def main():
         ret, frame = cap.read()
         # Frame is our image. All processing happens here
 
-        roll, mode, output = get_dice_state(dice_states, frame)
+        roll, mode, output, frame, show, var = get_dice_state(dice_states, frame)
+        roll = get_dice_state2(dice_states2, frame)
+        print(dice_states2)
+        variances.append(var)
         if roll == -1:
             roll_text = "No roll"
         else:

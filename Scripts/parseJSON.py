@@ -109,15 +109,15 @@ def draw_bounding(jsonPath, newImg, origImg, name="", crop=False):
                 elif(tags["type"] == "robber"):
                     color = hex2rgb(robberHex)
                 topLeft, bottomRight = bbox_pol(pts)
-                # if(crop):
-                    # crop_bbox(origImg, topLeft, bottomRight, name=name, count=count)
+                if(crop):
+                    crop_bbox(origImg, topLeft, bottomRight, name=name, count=count)
                 cv2.rectangle(newImg, topLeft, bottomRight, color, rect_thickness)
             elif(shape["name"] == "circle"):
                 topLeft, bottomRight = bbox_circ(shape["cx"], shape["cy"], shape["r"])
                 color = hex2rgb(coinHex)
-                if(tags["type"] == "coin"):
-                    if(crop):
-                        crop_bbox(origImg, topLeft, bottomRight, name=name, count=count)
+                # if(tags["type"] == "coin"):
+                    # if(crop):
+                        # crop_bbox(origImg, topLeft, bottomRight, name=name, count=count)
                 if(tags["type"] == "robber"):
                     color = hex2rgb(robberHex)
                 cv2.rectangle(newImg, topLeft, bottomRight, color, rect_thickness)
@@ -125,8 +125,8 @@ def draw_bounding(jsonPath, newImg, origImg, name="", crop=False):
                 color = hex2rgb(blackHex)
                 topLeft, bottomRight = bbox_ellispse(shape["cx"], shape["cy"], shape["rx"], shape["ry"])
                 if(tags["type"] == "coin"):
-                    if(crop):
-                        crop_bbox(origImg, topLeft, bottomRight, name=name, count=count)
+                    # if(crop):
+                        # crop_bbox(origImg, topLeft, bottomRight, name=name, count=count)
                     color = hex2rgb(coinHex)
                 elif(tags["type"] == "robber"):
                     color = hex2rgb(robberHex)
@@ -269,14 +269,16 @@ def main():
         export_bounding(json_path, new_img, False)
     '''
 
-    name = "catan_24"
-    imgPath = "../BoardImages/" + name + ".jpg"
-    jsonPath = '../BoardAnnotations/' + name + '.json'
-    origImg = cv2.imread(imgPath)
-    new_img = np.zeros_like(origImg, dtype=np.uint8)
-    create_semantic(jsonPath, new_img)
-    draw_bounding(jsonPath, new_img, origImg, name=name, crop=True)
-    scale_and_show(new_img + origImg)
+    name = "catan_22"
+    white_name = "catan_16"
+    imgPath = "../BoardImages/" + white_name + ".jpg"
+    jsonPath = '../BoardAnnotations/' + white_name + '.json'
+    # yellow = cv2.imread(imgPath)
+    white = cv2.imread(imgPath)
+    new_img = np.zeros_like(white, dtype=np.uint8)
+    # create_semantic(jsonPath, new_img)
+    draw_bounding(jsonPath, new_img, white, name=name, crop=True)
+    # scale_and_show(new_img + origImg)
 
 if __name__ == "__main__":
     main()

@@ -63,7 +63,7 @@ def detect_dots(img):
     return keypoints, im_with_keypoints
 
 def preprocess(img, gamma):
-    grayscale = gamma_correct(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), gamma);
+    grayscale = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     grayscale = cv2.GaussianBlur(grayscale,(5,5),cv2.BORDER_DEFAULT)
     ret, grayscale = cv2.threshold(grayscale,150,220,cv2.THRESH_BINARY)
     color = get_center_color(img)
@@ -86,6 +86,8 @@ def rotate_dots(img):
     for angle in angles:
         rotated = rotate_bound(processed, angle)   
         dots, key_img = detect_dots(rotated)
+        cv2.imshow("die", key_img)
+        cv2.waitKey(0)
         y_positions = []
         for dot in dots:
             y_positions.append(dot.pt[1])
@@ -109,6 +111,8 @@ def rotate_dots(img):
         for angle in angles:
             rotated = rotate_bound(processed, angle)   
             dots, key_img = detect_dots(rotated)
+            cv2.imshow("die", key_img)
+            cv2.waitKey(0)
             y_positions = []
             for dot in dots:
                 y_positions.append(dot.pt[1])
@@ -116,11 +120,13 @@ def rotate_dots(img):
             mean = np.mean(y_positions)
             y_means.append(mean)
             y_var.append(var)
-    
-    y_mean = np.argmax(y_means)
-    var_min = np.argmin(y_var)
-    rotated1 = rotate_bound(processed, angles[y_mean])
-    return rotated1, y_mean
+    if len(y_means) > 0 and len(y_var) > 0:
+        y_mean = np.argmax(y_means)
+        var_min = np.argmin(y_var)
+        rotated1 = rotate_bound(processed, angles[y_mean])
+        return rotated1, y_mean
+    else:
+        return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY), 10000000
 
 def get_center_color(img):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
@@ -134,7 +140,7 @@ def get_center_color(img):
     if np.mean(mask) > 5:
         return "red"
     else:
-        lower_red2 = np.array([90,100,80])
+        lower_red2 = np.array([80,100,80])
         upper_red2 = np.array([180,255,230])
         mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
         if np.mean(mask2) > 3:
@@ -152,13 +158,40 @@ def find_match(img):
     color = get_center_color(img)
     diffs = []
     
-    nums = np.arange(2, 13)
+    nums = [2,3,4,5,6,8,9,10,11,12]
 
     for num in nums:
-        if num == 7:
-            continue
 
-        img2 = cv2.imread("BoardCoins/" + str(num) + ".jpg")
+        img2 = cv2.imread("../BoardCoins/" + str(num) + ".jpg")
+        thisColor = get_center_color(img2)
+        
+        if thisColor is color:
+            rotated2, y_max = rotate_dots(img2)
+            rotated2 = crop_inward(rotated2, 10, 30)
+            compare_image = test_compare_keenan.CompareImage(img, img2, 1)
+            image_difference = compare_image.compare_image()
+            diffs.append(image_difference)
+        else:
+            diffs.append(100000)
+    
+    lowest = np.argmin(diffs)
+    return nums[lowest]
+
+def find_match_ant(img):
+    #preprocess
+    cv2.imshow("die", img)
+    cv2.waitKey(0)
+    rotated, y_max = rotate_dots(img)
+    rotated = crop_inward(rotated, 20, 30)
+    color = get_center_color(img)
+    print(color)
+    diffs = []
+    
+    nums = [2,3,4,5,6,8,9,10,11,12]
+
+    for num in nums:
+
+        img2 = cv2.imread("../BoardCoins/" + str(num) + ".jpg")
         thisColor = get_center_color(img2)
         
         if thisColor is color:
@@ -167,8 +200,57 @@ def find_match(img):
             image_difference = calcNumber.mse(rotated, rotated2)
             diffs.append(image_difference)
         else:
-            diffs.append(10000)
+            diffs.append(100000)
+    print(diffs)
+    lowest = np.argmin(diffs)
+    return nums[lowest]
+
+def find_match_norot_ant(img):
+    #preprocess
+    # rotated, y_max = rotate_dots(img)
+    # rotated = crop_inward(rotated, 20, 30)
+    # color = get_center_color(img)
+    diffs = []
     
+    nums = [2,3,4,5,6,8,9,10,11,12]
+
+    for num in nums:
+
+        img2 = cv2.imread("../BoardCoins/" + str(num) + ".jpg")
+        # thisColor = get_center_color(img2)
+        
+        # if thisColor is color:
+            # rotated2, y_max = rotate_dots(img2)
+            # rotated2 = crop_inward(rotated2, 10, 30)
+        image_difference = calcNumber.mse(img, img2)
+        diffs.append(image_difference)
+        # else:
+        # diffs.append(10000)
+    lowest = np.argmin(diffs)
+    return nums[lowest]
+
+def find_match_norot(img):
+    #preprocess
+    # rotated, y_max = rotate_dots(img)
+    # rotated = crop_inward(rotated, 20, 30)
+    # color = get_center_color(img)
+    diffs = []
+    
+    nums = [2,3,4,5,6,8,9,10,11,12]
+
+    for num in nums:
+
+        img2 = cv2.imread("../BoardCoins/" + str(num) + ".jpg")
+        # thisColor = get_center_color(img2)
+        
+        # if thisColor is color:
+            # rotated2, y_max = rotate_dots(img2)
+            # rotated2 = crop_inward(rotated2, 10, 30)
+        compare_image = test_compare_keenan.CompareImage(img, img2, 1)
+        image_difference = compare_image.compare_image()
+        diffs.append(image_difference)
+        # else:
+        # diffs.append(10000)
     lowest = np.argmin(diffs)
     return nums[lowest]
     
@@ -177,10 +259,45 @@ def main():
     # process coin
     coin_folder = "coins1"
     catan = 28
-    coin = 65
-    img = cv2.imread("Scripts/coins1/catan_" + str(catan) + "_" + str(coin) + ".jpg")
-    match = find_match(img)
-    print(match)
+    coins_start = 65
+
+    no_rot = []
+    rot = []
+    rot_ant = []
+    no_rot_ant = []
+    rand = []
+    actuals = [6,2,11,4,12,11,10,8,6,9,3,5,5,10,4,6,8,3]
+    actuals2 = [6,8,10,11,12,11,6,4,2,6,4,10,5,6,3,5,3,8]
+    count = 0 
+    for coin in range(coins_start, coins_start + len(actuals)):
+        print(coin)
+        img = cv2.imread("coins1/catan_" + str(catan) + "_" + str(coin) + ".jpg")
+        rot.append(find_match(img))
+        no_rot.append(find_match_norot(img))
+        rot_ant.append(find_match_ant(img))
+        no_rot_ant.append(find_match_norot_ant(img))
+        rand.append(np.random.randint(12, size=1)[0])
+        print(str(actuals[count]) + ":" + str(rot[count]) + ":" + str(no_rot[count]) + ":" + str(rot_ant[count]) + ":" + str(no_rot_ant[count]))
+        count += 1
+
+    no_rot_ct = 0
+    rot_ct = 0
+    no_rot_ant_ct = 0
+    rot_ant_ct = 0
+    rand_ct = 0
+    
+    for i in range(0, len(actuals)):
+        no_rot_ct += no_rot[i] == actuals[i]
+        rot_ct += rot[i] == actuals[i]
+        no_rot_ant_ct += no_rot_ant[i] == actuals[i]
+        rot_ant_ct += rot_ant[i] == actuals[i]
+        rand_ct += rand[i] == actuals[i]
+
+    print(no_rot_ct)
+    print(rot_ct)
+    print(no_rot_ant_ct)
+    print(rot_ant_ct)
+    print(rand_ct)
 
 if __name__ == "__main__":
     main()
