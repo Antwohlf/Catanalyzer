@@ -2,8 +2,8 @@ import cv2
 
 class CompareImage(object):
 
-    def __init__(self, img1, img2):
-        self.minimum_commutative_image_diff = 1
+    def __init__(self, img1, img2, diff):
+        self.minimum_commutative_image_diff = diff
         self.image_1 = img1
         self.image_2 = img2
 
@@ -11,7 +11,7 @@ class CompareImage(object):
         commutative_image_diff = self.get_image_difference(self.image_1, self.image_2)
 
         if commutative_image_diff < self.minimum_commutative_image_diff:
-            print ("Matched")
+            # print ("Matched")
             return commutative_image_diff
         return 10000 #random failure value
 
@@ -30,6 +30,6 @@ class CompareImage(object):
 
 
 if __name__ == '__main__':
-    compare_image = CompareImage('coins1/catan_28_65.jpg', 'coins2/catan_24_2.jpg')
+    compare_image = CompareImage('coins1/catan_28_65.jpg', 'coins2/catan_24_2.jpg', 1)
     image_difference = compare_image.compare_image()
     print(image_difference)

@@ -1,19 +1,21 @@
 #import the necessary packages
-from skimage import measure
-from imutils import contours
-import imutils
+# 
+# from imutils import contours
+# import imutils
 import argparse
 import numpy as np
 import cv2
 import os
 
 def mse(imA, imB):
+	imA = cv2.resize(imA,(200,200))
+	imB = cv2.resize(imB,(200,200))
 	# Calculate 'Mean Squared Error' between images
 	err = np.sum((imA.astype("float") - imB.astype("float")) ** 2)
 	err /= float(imA.shape[0] * imA.shape[1])
 	# The lower the error, the more similar the images are
 	return err
-
+'''
 def getNumber(image):
 	# Resize image to the size of the other images (200x200)
 	image = cv2.resize(image,(200,200))
@@ -37,7 +39,7 @@ def getNumber(image):
 			filetrunc = filename[:-4]
 			numVal = int(filetrunc)
 	return numVal
-
+'''
 def main():
 	image = cv2.imread('../two.jpg')
 	yeet = getNumber(image)

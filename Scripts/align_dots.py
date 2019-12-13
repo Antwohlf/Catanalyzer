@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import test_compare_keenan
+import calcNumber
 
 def gamma_correct(img, gamma):
     invGamma = 1.0 / gamma
@@ -37,10 +38,10 @@ def rotate_bound(image, angle):
 def detect_dots(img):
     min_threshold = 0 #50                     
     max_threshold = 255 #200                     
-    min_area = 8 #400                          
-    max_area = 40 #700
-    min_circularity = 0.4
-    min_inertia_ratio = 0.4
+    min_area = 10 #400                          
+    max_area = 120 #700
+    min_circularity = 0.5
+    min_inertia_ratio = 0.5
 
     params = cv2.SimpleBlobDetector_Params()  
     params.filterByArea = True
@@ -63,56 +64,123 @@ def detect_dots(img):
 
 def preprocess(img, gamma):
     grayscale = gamma_correct(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY), gamma);
-    ret, grayscale = cv2.threshold(grayscale,180,255,cv2.THRESH_TOZERO)
-    kernel = np.ones((2,2),np.uint8)
-    dilated = cv2.dilate(grayscale,kernel,iterations = 1)
-    eroded = cv2.dilate(dilated,kernel,iterations = 1)
-    eroded = cv2.dilate(eroded,kernel,iterations = 1)
-    return eroded
+    grayscale = cv2.GaussianBlur(grayscale,(5,5),cv2.BORDER_DEFAULT)
+    ret, grayscale = cv2.threshold(grayscale,150,220,cv2.THRESH_BINARY)
+    color = get_center_color(img)
+    kernel = np.ones((7,7),np.uint8)
+    kernel2 = np.ones((5,5),np.uint8)
+    eroded = cv2.dilate(grayscale,kernel,iterations = 1)
+    dilated = cv2.erode(eroded,kernel2,iterations = 1)
+    return grayscale
+
 
 def rotate_dots(img):
-    angles = np.arange(0, 360, 5) #5-degree angle increments
     processed = preprocess(img, 1)
+    angles = np.arange(0, 280, 5) #5-degree angle increments
     y_means = []
+    y_var = []
+
+    count = 0 
+    skip = True
+
     for angle in angles:
         rotated = rotate_bound(processed, angle)   
         dots, key_img = detect_dots(rotated)
         y_positions = []
         for dot in dots:
             y_positions.append(dot.pt[1])
-        y_means.append(np.mean(y_positions))
-    y_max = np.argmax(y_means)
-    rotated1 = rotate_bound(processed, angles[y_max])  
-    return rotated1, y_max
+        if len(dots) > 0:
+            var = np.var(y_positions)
+            mean = np.mean(y_positions)
+            y_means.append(mean)
+            y_var.append(var)
 
-get_center_color(img):
+        #Leave early if we are progessing upwards
+        if count is 4:
+            if (len(y_var) > 0 and y_var[0] <= var) and (len(y_means) > 0 and y_means[0] > mean):
+                skip = False
+                break
+        count = count + 1
+    if not skip:
+        angles = np.arange(360, 280, -5) #5-degree angle increments
+        y_means = []
+        y_var = []
+
+        for angle in angles:
+            rotated = rotate_bound(processed, angle)   
+            dots, key_img = detect_dots(rotated)
+            y_positions = []
+            for dot in dots:
+                y_positions.append(dot.pt[1])
+            var = np.var(y_positions)
+            mean = np.mean(y_positions)
+            y_means.append(mean)
+            y_var.append(var)
+    
+    y_mean = np.argmax(y_means)
+    var_min = np.argmin(y_var)
+    rotated1 = rotate_bound(processed, angles[y_mean])
+    return rotated1, y_mean
+
+def get_center_color(img):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    lower_red = np.array([0,100,80])
+    upper_red = np.array([10,255,230])
+
+    mask = cv2.inRange(hsv, lower_red, upper_red)
+    mask = crop_inward(mask, 30, 30)
+
+    if np.mean(mask) > 5:
+        return "red"
+    else:
+        lower_red2 = np.array([90,100,80])
+        upper_red2 = np.array([180,255,230])
+        mask2 = cv2.inRange(hsv, lower_red2, upper_red2)
+        if np.mean(mask2) > 3:
+            return "red"
+    return "black"
+
+def crop_inward(img, crop_amt_x, crop_amt_y):
+    crop_img = img[crop_amt_x:-crop_amt_x, crop_amt_y:-crop_amt_y]
+    return crop_img
+
+def find_match(img):
+    #preprocess
+    rotated, y_max = rotate_dots(img)
+    rotated = crop_inward(rotated, 20, 30)
+    color = get_center_color(img)
+    diffs = []
+    
+    nums = np.arange(2, 13)
+
+    for num in nums:
+        if num == 7:
+            continue
+
+        img2 = cv2.imread("BoardCoins/" + str(num) + ".jpg")
+        thisColor = get_center_color(img2)
+        
+        if thisColor is color:
+            rotated2, y_max = rotate_dots(img2)
+            rotated2 = crop_inward(rotated2, 10, 30)
+            image_difference = calcNumber.mse(rotated, rotated2)
+            diffs.append(image_difference)
+        else:
+            diffs.append(10000)
+    
+    lowest = np.argmin(diffs)
+    return nums[lowest]
     
 
 def main():
-    nums = np.arange(1, 18)
-    img = cv2.imread("coins1/catan_28_65.jpg")
-    rotated, y_max = rotate_dots(img)
-    edges1 = cv2.Canny(rotated,100,100)
-    cv2.imshow("init", edges1)
-    cv2.waitKey(0)
-    diffs = []
-    for num in nums:
-        img2 = cv2.imread("coins2/catan_24_" + str(num) + ".jpg")
-        rotated2, y_max = rotate_dots(img2)
-        edges2 = cv2.Canny(rotated2,100,100)
-        compare_image = test_compare_keenan.CompareImage(edges1, edges2)
-        image_difference = compare_image.compare_image()
-        diffs.append(image_difference)
-    
-    lowest = np.argmin(diffs)
-    matched = cv2.imread("coins2/catan_24_" + str(lowest + 1) + ".jpg")
-    matched, y_max = rotate_dots(matched)
-    edges2 = cv2.Canny(matched,100,100)
-    cv2.imshow("init", edges2)
-    cv2.waitKey(0)
-    
-    print(diffs)
-    print(lowest + 1)
+    # process coin
+    coin_folder = "coins1"
+    catan = 28
+    coin = 65
+    img = cv2.imread("Scripts/coins1/catan_" + str(catan) + "_" + str(coin) + ".jpg")
+    match = find_match(img)
+    print(match)
 
 if __name__ == "__main__":
     main()
